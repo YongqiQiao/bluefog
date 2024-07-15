@@ -17,7 +17,7 @@
 from typing import Any, List, Optional
 from functools import wraps
 import collections
-
+collections.Iterable = collections.abc.Iterable
 import numpy as np
 import torch
 import bluefog.torch as bf
@@ -43,16 +43,18 @@ def broadcast_parameters(params, root_rank):
         params = [p if isinstance(p, tuple) else (None, p) for p in params]
     else:
         raise ValueError("invalid params of type: %s" % type(params))
-
+    
     # Run asynchronous broadcasts.
     handles = []
     for name, p in params:
+        p=torch.Tensor(p)
         handle = bf.broadcast_nonblocking_(p, root_rank, name)
         handles.append(handle)
-
+    
     # Wait for completion.
     for handle in handles:
         bf.synchronize(handle)
+    
 
 
 def allreduce_parameters(params):
@@ -150,7 +152,10 @@ def broadcast_optimizer_state(optimizer, root_rank):
             x = t(x)
             return t([_recursive_cast(x[i], dtypes[i]) for i in range(len(x))])
         else:
-            return dtype(x)
+            if "{}".format(dtype) != "<class 'NoneType'>":
+                return dtype(x)
+            else :
+                return x
 
     # Some optimizer parameters may be represented as scalars instead of
     # tensors.  In such cases, we need to wrap the scalar in a tensor, then
@@ -182,7 +187,9 @@ def broadcast_optimizer_state(optimizer, root_rank):
             # Options like the learning rate are scalar, and need to be wrapped in tensors
             key = "%s.%d" % (option_key, index)
             dtypes = _get_types(option_value)
-            option_tensor = torch.Tensor([option_value])
+            if option_value == None :
+                option_tensor = torch.Tensor([0])
+            else : option_tensor = torch.Tensor([option_value])
             callbacks[key] = _create_option_callback(
                 index, option_key, option_tensor, dtypes
             )

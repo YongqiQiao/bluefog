@@ -32,8 +32,8 @@ def IsTopologyEquivalent(topo1: nx.DiGraph, topo2: nx.DiGraph) -> bool:
         return False
     if topo1.number_of_edges() != topo2.number_of_edges():
         return False
-    A1 = nx.to_numpy_matrix(topo1).ravel()
-    A2 = nx.to_numpy_matrix(topo2).ravel()
+    A1 = nx.to_numpy_array(topo1).ravel()
+    A2 = nx.to_numpy_array(topo2).ravel()
     return (A1 == A2).all()
 
 

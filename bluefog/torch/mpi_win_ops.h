@@ -22,10 +22,12 @@
 
 #include "../common/common.h"
 #include "adapter.h"
-#include <TH/TH.h>
+// #include </home/bluefog/th_build/include/TH/TH.h>
 
 #if HAVE_CUDA
-#include <THC/THC.h>
+#include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <ATen/cuda/CUDAEvent.h>
 #endif
 
 namespace bluefog {
@@ -109,77 +111,85 @@ class WinTorchStorageManager {
   int out_neighbor_degree_;
 };
 
-#define WIN_CREATE_H(torch_Tensor, THTensor)                     \
+#define WIN_CREATE_H(torch_Tensor, ATenTensor)                     \
   extern "C" int bluefog_torch_win_create_##torch_Tensor(        \
-      THTensor* tensor, char* name, bool zero_init);
+      at::Tensor* tensor, char* name, bool zero_init);
 
+WIN_CREATE_H(torch_Tensor, ATenTensor)
+// WIN_CREATE_H(torch_IntTensor, THIntTensor)
+// WIN_CREATE_H(torch_LongTensor, THLongTensor)
+// WIN_CREATE_H(torch_FloatTensor, THFloatTensor)
+// WIN_CREATE_H(torch_DoubleTensor, THDoubleTensor)
+
+#if HAVE_CUDA
+WIN_CREATE_H(torch_cuda_Tensor, ATenCudaTensor)
+// WIN_CREATE_H(torch_cuda_IntTensor, THCudaIntTensor)
+// WIN_CREATE_H(torch_cuda_LongTensor, THCudaLongTensor)
+// WIN_CREATE_H(torch_cuda_FloatTensor, THCudaTensor)
+// WIN_CREATE_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
+#endif
+
+#define WIN_SYNC_H(torch_Tensor, ATenTensor)                     \
+  extern "C" int bluefog_torch_win_sync_##torch_Tensor(        \
+      at::Tensor* tensor, char* name,                            \
+      double self_weight,                                      \
+      const std::unordered_map<int, double>& neighbor_weights, \
+      bool reset, bool internal_avg, bool require_mutex);
+
+WIN_SYNC_H(torch_Tensor, ATenTensor)
 WIN_CREATE_H(torch_IntTensor, THIntTensor)
 WIN_CREATE_H(torch_LongTensor, THLongTensor)
 WIN_CREATE_H(torch_FloatTensor, THFloatTensor)
 WIN_CREATE_H(torch_DoubleTensor, THDoubleTensor)
 
 #if HAVE_CUDA
+WIN_SYNC_H(torch_cuda_Tensor, ATenCudaTensor)
 WIN_CREATE_H(torch_cuda_IntTensor, THCudaIntTensor)
 WIN_CREATE_H(torch_cuda_LongTensor, THCudaLongTensor)
 WIN_CREATE_H(torch_cuda_FloatTensor, THCudaTensor)
 WIN_CREATE_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
 #endif
 
-#define WIN_SYNC_H(torch_Tensor, THTensor)                     \
-  extern "C" int bluefog_torch_win_sync_##torch_Tensor(        \
-      THTensor* tensor, char* name,                            \
-      double self_weight,                                      \
-      const std::unordered_map<int, double>& neighbor_weights, \
-      bool reset, bool internal_avg, bool require_mutex);
+#define WIN_PUT_H(torch_Tensor, ATenTensor)                             \
+extern "C" int bluefog_torch_win_put_##torch_Tensor(                \
+    at::Tensor* tensor, char* name,                                   \
+    const double self_weight,                                       \
+    const std::unordered_map<int, double>& dst_weights,             \
+    const bool require_mutex);
 
-WIN_SYNC_H(torch_IntTensor, THIntTensor)
-WIN_SYNC_H(torch_LongTensor, THLongTensor)
-WIN_SYNC_H(torch_FloatTensor, THFloatTensor)
-WIN_SYNC_H(torch_DoubleTensor, THDoubleTensor)
-
-#if HAVE_CUDA
-WIN_SYNC_H(torch_cuda_IntTensor, THCudaIntTensor)
-WIN_SYNC_H(torch_cuda_LongTensor, THCudaLongTensor)
-WIN_SYNC_H(torch_cuda_FloatTensor, THCudaTensor)
-WIN_SYNC_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
-#endif
-
-#define WIN_PUT_H(torch_Tensor, THTensor)                             \
-  extern "C" int bluefog_torch_win_put_##torch_Tensor(                \
-      THTensor* tensor, char* name,                                   \
-      const double self_weight,                                       \
-      const std::unordered_map<int, double>& dst_weights,             \
-      const bool require_mutex);
-
-WIN_PUT_H(torch_IntTensor, THIntTensor)
-WIN_PUT_H(torch_LongTensor, THLongTensor)
-WIN_PUT_H(torch_FloatTensor, THFloatTensor)
-WIN_PUT_H(torch_DoubleTensor, THDoubleTensor)
+WIN_PUT_H(torch_Tensor, ATenTensor)
+WIN_CREATE_H(torch_IntTensor, THIntTensor)
+WIN_CREATE_H(torch_LongTensor, THLongTensor)
+WIN_CREATE_H(torch_FloatTensor, THFloatTensor)
+WIN_CREATE_H(torch_DoubleTensor, THDoubleTensor)
 
 #if HAVE_CUDA
-WIN_PUT_H(torch_cuda_IntTensor, THCudaIntTensor)
-WIN_PUT_H(torch_cuda_LongTensor, THCudaLongTensor)
-WIN_PUT_H(torch_cuda_FloatTensor, THCudaTensor)
-WIN_PUT_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
+WIN_PUT_H(torch_cuda_Tensor, ATenCudaTensor)
+WIN_CREATE_H(torch_cuda_IntTensor, THCudaIntTensor)
+WIN_CREATE_H(torch_cuda_LongTensor, THCudaLongTensor)
+WIN_CREATE_H(torch_cuda_FloatTensor, THCudaTensor)
+WIN_CREATE_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
 #endif
 
-#define WIN_ACCUMULATE_H(torch_Tensor, THTensor)                         \
+#define WIN_ACCUMULATE_H(torch_Tensor, ATenTensor)                         \
   extern "C" int bluefog_torch_win_accumulate_##torch_Tensor(            \
-      THTensor* tensor, char* name,                                      \
+      at::Tensor* tensor, char* name,                                      \
       const double self_weight,                                          \
       const std::unordered_map<int, double>& dst_weights,                \
       const bool require_mutex);
 
-WIN_ACCUMULATE_H(torch_IntTensor, THIntTensor)
-WIN_ACCUMULATE_H(torch_LongTensor, THLongTensor)
-WIN_ACCUMULATE_H(torch_FloatTensor, THFloatTensor)
-WIN_ACCUMULATE_H(torch_DoubleTensor, THDoubleTensor)
+WIN_ACCUMULATE_H(torch_Tensor, ATenTensor)
+WIN_CREATE_H(torch_IntTensor, THIntTensor)
+WIN_CREATE_H(torch_LongTensor, THLongTensor)
+WIN_CREATE_H(torch_FloatTensor, THFloatTensor)
+WIN_CREATE_H(torch_DoubleTensor, THDoubleTensor)
 
 #if HAVE_CUDA
-WIN_ACCUMULATE_H(torch_cuda_IntTensor, THCudaIntTensor)
-WIN_ACCUMULATE_H(torch_cuda_LongTensor, THCudaLongTensor)
-WIN_ACCUMULATE_H(torch_cuda_FloatTensor, THCudaTensor)
-WIN_ACCUMULATE_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
+WIN_ACCUMULATE_H(torch_cuda_Tensor, ATenCudaTensor)
+WIN_CREATE_H(torch_cuda_IntTensor, THCudaIntTensor)
+WIN_CREATE_H(torch_cuda_LongTensor, THCudaLongTensor)
+WIN_CREATE_H(torch_cuda_FloatTensor, THCudaTensor)
+WIN_CREATE_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
 #endif
 
 extern "C" int bluefog_torch_win_GET(

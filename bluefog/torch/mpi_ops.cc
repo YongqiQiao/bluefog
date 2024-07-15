@@ -20,13 +20,14 @@
 #include <thread>
 #include <torch/extension.h>
 #include <torch/torch.h>
-
+#include <iostream>
 #include "adapter.h"
 #include "handle_manager.h"
 #include "../common/cuda_util.h"
 #include "../common/logging.h"
 #include "../common/operations.h"
 #include "../common/timeline.h"
+ #include <cstdio>
 
 namespace bluefog {
 namespace torch {
@@ -251,12 +252,9 @@ int DoBroadcast(::torch::Tensor tensor, ::torch::Tensor output, int root_rank,
   timeline_ptr->ActivityStart(op_name, "ENQUEUE_BROADCAST");
   // Note callback function will be called by different thread.
   std::thread::id tid = std::this_thread::get_id();
-
   auto callback_wrapper = GetCallbackWrapper(handle, timeline_ptr, op_name, tid);
-
   auto bf_tensor = std::make_shared<TorchTensor>(tensor);
   std::shared_ptr<common::Tensor> bf_output = nullptr;
-
   if (OPS_ON_CPU && tensor.device().is_cuda()) {
     ::torch::Tensor cpu_buffer =
         tensor.to(::torch::Device(::torch::kCPU), /*non_blocking=*/false);

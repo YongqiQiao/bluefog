@@ -220,13 +220,13 @@ def get_cuda_dirs(build_ext, cpp_flags):
 
 def get_nccl_dirs(build_ext, cuda_include_dirs, cuda_lib_dirs, cpp_flags):
     nccl_include_dirs = []
-    nccl_lib_dirs = []
+    nccl_lib_dirs = [] 
     nccl_libs = []
 
     nccl_home = os.environ.get('BLUEFOG_NCCL_HOME')
     if nccl_home:
         nccl_include_dirs += ['%s/include' % nccl_home]
-        nccl_lib_dirs += ['%s/lib' % nccl_home, '%s/lib64' % nccl_home]
+        nccl_lib_dirs += ['%s/lib' % nccl_home]
 
     nccl_include = os.environ.get('BLUEFOG_NCCL_INCLUDE')
     if nccl_include:
@@ -430,7 +430,9 @@ def is_torch_cuda(build_ext, include_dirs, extra_compile_args):
                      include_dirs=include_dirs + include_paths(cuda=True),
                      extra_compile_preargs=extra_compile_args,
                      code=textwrap.dedent('''\
-            #include <THC/THC.h>
+            #include <ATen/ATen.h>
+            #include <ATen/cuda/CUDAContext.h>
+            #include <ATen/cuda/CUDAEvent.h>
             void test() {
             }
             '''))
@@ -544,11 +546,12 @@ def build_torch_extension(build_ext, global_options, torch_version):
                          library_dirs=options['LIBRARY_DIRS'],
                          extra_objects=options['EXTRA_OBJECTS'],
                          libraries=options['LIBRARIES'])
-
+    print("2")
+    print("3")
     # Patch an existing bluefog_torch_mpi_lib extension object.
     for k, v in ext.__dict__.items():
         bluefog_torch_mpi_lib.__dict__[k] = v
-
+    
     build_ext.build_extension(bluefog_torch_mpi_lib)
 
 
@@ -563,27 +566,28 @@ class custom_build_ext(_build_ext):
         if not os.environ.get('BLUEFOG_WITHOUT_PYTORCH'):
             dummy_import_torch()
 
-        # Disable the tensorflow built since it is supported yet.
-        if False and not os.environ.get('BLUEFOG_WITHOUT_TENSORFLOW'):
-            try:
-                check_tf_version()
-                build_tf_extension(self, options)
-                built_plugins.append(True)
-                print('INFO: Tensorflow extension is built successfully.')
-            except:  # pylint: disable=bare-except
-                if not os.environ.get('BLUEFOG_WITH_TENSORFLOW'):
-                    print(
-                        'INFO: Unable to build TensorFlow plugin, will skip it.\n\n'
-                        '%s' % traceback.format_exc(), file=sys.stderr)
-                    built_plugins.append(False)
-                else:
-                    raise
+        # # Disable the tensorflow built since it is supported yet.
+        # if False and not os.environ.get('BLUEFOG_WITHOUT_TENSORFLOW'):
+        #     try:
+        #         check_tf_version()
+        #         build_tf_extension(self, options)
+        #         built_plugins.append(True)
+        #         print('INFO: Tensorflow extension is built successfully.')
+        #     except:  # pylint: disable=bare-except
+        #         if not os.environ.get('BLUEFOG_WITH_TENSORFLOW'):
+        #             print(
+        #                 'INFO: Unable to build TensorFlow plugin, will skip it.\n\n'
+        #                 '%s' % traceback.format_exc(), file=sys.stderr)
+        #             built_plugins.append(False)
+        #         else:
+        #             raise
 
         if not os.environ.get('BLUEFOG_WITHOUT_PYTORCH'):
             try:
                 torch_version = check_torch_version()
                 build_torch_extension(self, options, torch_version)
                 built_plugins.append(True)
+                print("1")
                 print('INFO: PyTorch extension is built successfully.')
             except:  # pylint: disable=bare-except
                 if not os.environ.get('BLUEFOG_WITH_TENSORFLOW'):

@@ -15,21 +15,21 @@
 // ==============================================================================
 
 #if HAVE_CUDA
-#if TORCH_VERSION >= 1005000000
 #include <c10/cuda/CUDAException.h>
 #include <c10/cuda/CUDAStream.h>
 #else
-#include <THC/THC.h>
-#endif
+#include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <ATen/cuda/CUDAEvent.h>
 #endif
 
 #include "../common/cuda_util.h"
 #include "../common/logging.h"
 #include "adapter.h"
 
-#if HAVE_CUDA
-extern THCState* state;
-#endif
+// #if HAVE_CUDA
+// // extern THCState* state;
+// #endif
 
 namespace bluefog {
 namespace torch {
@@ -201,22 +201,20 @@ TorchReadyEvent::TorchReadyEvent(int device) : device_(device) {
       cuda_event_ = queue.front();
       queue.pop();
     } else {
-#if TORCH_VERSION >= 1005000000
       C10_CUDA_CHECK(cudaEventCreateWithFlags(
           &cuda_event_, cudaEventBlockingSync | cudaEventDisableTiming));
-#else
-      THCudaCheck(cudaEventCreateWithFlags(
-          &cuda_event_, cudaEventBlockingSync | cudaEventDisableTiming));
+// #else
+//       AT_CUDA_CHECK(cudaEventCreateWithFlags(
+//           &cuda_event_, cudaEventBlockingSync | cudaEventDisableTiming));
 #endif
     }
   }
-#if TORCH_VERSION >= 1005000000
   auto stream = c10::cuda::getCurrentCUDAStream(device_);
   C10_CUDA_CHECK(cudaEventRecord(cuda_event_, stream));
-#else
-  auto stream = THCState_getCurrentStreamOnDevice(state, device_);
-  THCudaCheck(cudaEventRecord(cuda_event_, stream));
-#endif
+// #else
+  // auto stream = THCState_getCurrentStreamOnDevice(state, device_);
+  // AT_CUDA_CHECK(cudaEventRecord(cuda_event_, at::cuda::getCurrentCUDAStream().stream()));
+
 }
 
 TorchReadyEvent::~TorchReadyEvent() {
@@ -232,14 +230,12 @@ bool TorchReadyEvent::Ready() const {
   if (status == cudaErrorNotReady) {
     return false;
   }
-#if TORCH_VERSION >= 1005000000
   C10_CUDA_CHECK(status);
-#else
-  THCudaCheck(status);
-#endif
+// #else
+//   AT_CUDA_CHECK(status);
+
   return true;
 }
-#endif
 
 // On GPU this event will signal that GPU computations are done and data is
 // ready.

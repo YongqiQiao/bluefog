@@ -76,6 +76,7 @@ else:
                      "[expo2(Default), ring, mesh, star].")
 
 x_bar = bf.allreduce(x, average=True)
+print("111")
 mse = [torch.norm(x-x_bar, p=2) / torch.norm(x_bar, p=2)]
 
 if not args.asynchronous_mode:

@@ -81,14 +81,14 @@ void NCCLContext::Initialize(const int rank, const int size,
   }
   self_rank = rank;
   self_local_rank = local_rank;
-
   // A single rank will create a unique ID and send it to all other ranks to
   // make sure everyone has it.
   ncclUniqueId nccl_id;
-  if (rank == 0) ncclGetUniqueId(&nccl_id);
+  if (rank == 0){
+    ncclGetUniqueId(&nccl_id);
+  }
   MPICHECK(
       MPI_Bcast((void*)&nccl_id, sizeof(nccl_id), MPI_BYTE, 0, world_comm));
-
   // Assume one device per process
   int nDevices = 0;
   CUDACHECK(cudaGetDeviceCount(&nDevices));
@@ -97,11 +97,10 @@ void NCCLContext::Initialize(const int rank, const int size,
   int greatest_priority;
   CUDACHECK(cudaDeviceGetStreamPriorityRange(NULL, &greatest_priority));
   CUDACHECK(cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking,
-                                         greatest_priority));
+                                         greatest_priority));                               
   // TODO(ybc) Handle the error case then np > number of GPU properly.
   NCCLCHECK(ncclCommInitRank(&nccl_comm, size, nccl_id, rank));
   MPI_Barrier(world_comm);
-
   // Build local nccl
   ncclUniqueId local_nccl_id;
   if (local_rank == 0) ncclGetUniqueId(&local_nccl_id);

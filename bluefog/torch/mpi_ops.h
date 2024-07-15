@@ -23,129 +23,131 @@
 #include <TH/TH.h>
 
 #if HAVE_CUDA
-#include <THC/THC.h>
+#include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <ATen/cuda/CUDAEvent.h>
 #endif
 
 namespace bluefog {
 namespace torch {
 
-#define ALLREDUCE_H(torch_Tensor, THTensor)                                    \
+#define ALLREDUCE_H(torch_Tensor, ATenTensor)                                    \
   extern "C" int bluefog_torch_allreduce_nonblocking_##torch_Tensor(           \
-      THTensor* tensor, THTensor* output, int average,                         \
+      at::Tensor* tensor, at::Tensor* output, int average,                         \
       bool is_hierarchical_local, char* name);
 
-ALLREDUCE_H(torch_IntTensor, THIntTensor)
-ALLREDUCE_H(torch_LongTensor, THLongTensor)
-ALLREDUCE_H(torch_HalfTensor, THHalfTensor)
-ALLREDUCE_H(torch_FloatTensor, THFloatTensor)
-ALLREDUCE_H(torch_DoubleTensor, THDoubleTensor)
+ALLREDUCE_H(torch_Tensor, ATenTensor)
+// ALLREDUCE_H(torch_LongTensor, THLongTensor)
+// ALLREDUCE_H(torch_HalfTensor, THHalfTensor)
+// ALLREDUCE_H(torch_FloatTensor, THFloatTensor)
+// ALLREDUCE_H(torch_DoubleTensor, THDoubleTensor)
 
 #if HAVE_CUDA
-ALLREDUCE_H(torch_cuda_IntTensor, THCudaIntTensor)
-ALLREDUCE_H(torch_cuda_LongTensor, THCudaLongTensor)
-ALLREDUCE_H(torch_cuda_HalfTensor, THCudaHalfTensor)
-ALLREDUCE_H(torch_cuda_FloatTensor, THCudaTensor)
-ALLREDUCE_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
+ALLREDUCE_H(torch_cuda_Tensor, ATenCudaTensor)
+// ALLREDUCE_H(torch_cuda_LongTensor, THCudaLongTensor)
+// ALLREDUCE_H(torch_cuda_HalfTensor, THCudaHalfTensor)
+// ALLREDUCE_H(torch_cuda_FloatTensor, THCudaTensor)
+// ALLREDUCE_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
 #endif
 
-#define BROADCAST_H(torch_Tensor, THTensor)                                     \
+#define BROADCAST_H(torch_Tensor, ATenTensor)                                     \
   extern "C" int bluefog_torch_broadcast_nonblocking_##torch_Tensor(            \
-      THTensor* tensor, THTensor* output, int root_rank, char* name);
+      at::Tensor* tensor, at::Tensor* output, int root_rank, char* name);
 
-BROADCAST_H(torch_ByteTensor, THByteTensor)
-BROADCAST_H(torch_CharTensor, THCharTensor)
-BROADCAST_H(torch_ShortTensor, THShortTensor)
-BROADCAST_H(torch_IntTensor, THIntTensor)
-BROADCAST_H(torch_LongTensor, THLongTensor)
-BROADCAST_H(torch_HalfTensor, THHalfTensor)
-BROADCAST_H(torch_FloatTensor, THFloatTensor)
-BROADCAST_H(torch_DoubleTensor, THDoubleTensor)
+BROADCAST_H(torch_Tensor, ATenTensor)
+// BROADCAST_H(torch_CharTensor, THCharTensor)
+// BROADCAST_H(torch_ShortTensor, THShortTensor)
+// BROADCAST_H(torch_IntTensor, THIntTensor)
+// BROADCAST_H(torch_LongTensor, THLongTensor)
+// BROADCAST_H(torch_HalfTensor, THHalfTensor)
+// BROADCAST_H(torch_FloatTensor, THFloatTensor)
+// BROADCAST_H(torch_DoubleTensor, THDoubleTensor)
 
 #if HAVE_CUDA
-BROADCAST_H(torch_cuda_IntTensor, THCudaIntTensor)
-BROADCAST_H(torch_cuda_LongTensor, THCudaLongTensor)
-BROADCAST_H(torch_cuda_HalfTensor, THCudaHalfTensor)
-BROADCAST_H(torch_cuda_FloatTensor, THCudaTensor)
-BROADCAST_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
+BROADCAST_H(torch_cuda_Tensor, ATenCudaTensor)
+// BROADCAST_H(torch_cuda_LongTensor, THCudaLongTensor)
+// BROADCAST_H(torch_cuda_HalfTensor, THCudaHalfTensor)
+// BROADCAST_H(torch_cuda_FloatTensor, THCudaTensor)
+// BROADCAST_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
 #endif
 
-#define ALLGATHER_H(torch_Tensor, THTensor)                                    \
+#define ALLGATHER_H(torch_Tensor, ATenTensor)                                    \
   extern "C" int bluefog_torch_allgather_nonblocking_##torch_Tensor(           \
-      THTensor* tensor, THTensor* output, char* name);
+      at::Tensor* tensor, at::Tensor* output, char* name);
 
-ALLGATHER_H(torch_ByteTensor, THByteTensor)
-ALLGATHER_H(torch_CharTensor, THCharTensor)
-ALLGATHER_H(torch_ShortTensor, THShortTensor)
-ALLGATHER_H(torch_IntTensor, THIntTensor)
-ALLGATHER_H(torch_LongTensor, THLongTensor)
-ALLGATHER_H(torch_HalfTensor, THHalfTensor)
-ALLGATHER_H(torch_FloatTensor, THFloatTensor)
-ALLGATHER_H(torch_DoubleTensor, THDoubleTensor)
+ALLGATHER_H(torch_Tensor, ATenTensor)
+// ALLGATHER_H(torch_CharTensor, THCharTensor)
+// ALLGATHER_H(torch_ShortTensor, THShortTensor)
+// ALLGATHER_H(torch_IntTensor, THIntTensor)
+// ALLGATHER_H(torch_LongTensor, THLongTensor)
+// ALLGATHER_H(torch_HalfTensor, THHalfTensor)
+// ALLGATHER_H(torch_FloatTensor, THFloatTensor)
+// ALLGATHER_H(torch_DoubleTensor, THDoubleTensor)
 
 #if HAVE_CUDA
-ALLGATHER_H(torch_cuda_IntTensor, THCudaIntTensor)
-ALLGATHER_H(torch_cuda_LongTensor, THCudaLongTensor)
-ALLGATHER_H(torch_cuda_HalfTensor, THCudaHalfTensor)
-ALLGATHER_H(torch_cuda_FloatTensor, THCudaTensor)
-ALLGATHER_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
+ALLGATHER_H(torch_cuda_Tensor, ATenCudaTensor)
+// ALLGATHER_H(torch_cuda_LongTensor, THCudaLongTensor)
+// ALLGATHER_H(torch_cuda_HalfTensor, THCudaHalfTensor)
+// ALLGATHER_H(torch_cuda_FloatTensor, THCudaTensor)
+// ALLGATHER_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
 #endif
 
-#define NEIGHBOR_ALLGATHER_H(torch_Tensor, THTensor)                              \
+#define NEIGHBOR_ALLGATHER_H(torch_Tensor, ATenTensor)                              \
   extern "C" int bluefog_torch_neighbor_allgather_nonblocking_##torch_Tensor(     \
-      THTensor* tensor, THTensor* output, const std::vector<int>& src_ranks,      \
+      at::Tensor* tensor, at::Tensor* output, const std::vector<int>& src_ranks,      \
       const std::vector<int>& dst_ranks, bool dynamic_neighbors_enabled,          \
       bool enable_topo_check, char* name);
 
-NEIGHBOR_ALLGATHER_H(torch_ByteTensor, THByteTensor)
-NEIGHBOR_ALLGATHER_H(torch_CharTensor, THCharTensor)
-NEIGHBOR_ALLGATHER_H(torch_ShortTensor, THShortTensor)
-NEIGHBOR_ALLGATHER_H(torch_IntTensor, THIntTensor)
-NEIGHBOR_ALLGATHER_H(torch_LongTensor, THLongTensor)
-NEIGHBOR_ALLGATHER_H(torch_HalfTensor, THHalfTensor)
-NEIGHBOR_ALLGATHER_H(torch_FloatTensor, THFloatTensor)
-NEIGHBOR_ALLGATHER_H(torch_DoubleTensor, THDoubleTensor)
+NEIGHBOR_ALLGATHER_H(torch_Tensor, ATenTensor)
+// NEIGHBOR_ALLGATHER_H(torch_CharTensor, THCharTensor)
+// NEIGHBOR_ALLGATHER_H(torch_ShortTensor, THShortTensor)
+// NEIGHBOR_ALLGATHER_H(torch_IntTensor, THIntTensor)
+// NEIGHBOR_ALLGATHER_H(torch_LongTensor, THLongTensor)
+// NEIGHBOR_ALLGATHER_H(torch_HalfTensor, THHalfTensor)
+// NEIGHBOR_ALLGATHER_H(torch_FloatTensor, THFloatTensor)
+// NEIGHBOR_ALLGATHER_H(torch_DoubleTensor, THDoubleTensor)
 
 #if HAVE_CUDA
-NEIGHBOR_ALLGATHER_H(torch_cuda_IntTensor, THCudaIntTensor)
-NEIGHBOR_ALLGATHER_H(torch_cuda_LongTensor, THCudaLongTensor)
-NEIGHBOR_ALLGATHER_H(torch_cuda_HalfTensor, THCudaHalfTensor)
-NEIGHBOR_ALLGATHER_H(torch_cuda_FloatTensor, THCudaTensor)
-NEIGHBOR_ALLGATHER_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
+NEIGHBOR_ALLGATHER_H(torch_cuda_Tensor, ATenCudaTensor)
+// NEIGHBOR_ALLGATHER_H(torch_cuda_LongTensor, THCudaLongTensor)
+// NEIGHBOR_ALLGATHER_H(torch_cuda_HalfTensor, THCudaHalfTensor)
+// NEIGHBOR_ALLGATHER_H(torch_cuda_FloatTensor, THCudaTensor)
+// NEIGHBOR_ALLGATHER_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
 #endif
 
-#define NEIGHBOR_ALLREDUCE_H(torch_Tensor, THTensor)                           \
+#define NEIGHBOR_ALLREDUCE_H(torch_Tensor, ATenTensor)                           \
   extern "C" int bluefog_torch_neighbor_allreduce_nonblocking_##torch_Tensor(  \
-      THTensor* tensor, THTensor* output, double self_weight,                  \
+      at::Tensor* tensor, at::Tensor* output, double self_weight,                  \
       const std::unordered_map<int, double>& src_weights,                      \
       const std::unordered_map<int, double>& dst_weights,                      \
       bool dynamic_neighbors_enabled, bool dst_weighting_enabled,              \
       bool enable_topo_check, bool avg_computation, bool is_hierarchical,      \
       char* name);
 
-NEIGHBOR_ALLREDUCE_H(torch_HalfTensor, THHalfTensor)
-NEIGHBOR_ALLREDUCE_H(torch_FloatTensor, THFloatTensor)
-NEIGHBOR_ALLREDUCE_H(torch_DoubleTensor, THDoubleTensor)
+NEIGHBOR_ALLREDUCE_H(torch_Tensor, ATenTensor)
+// NEIGHBOR_ALLREDUCE_H(torch_FloatTensor, THFloatTensor)
+// NEIGHBOR_ALLREDUCE_H(torch_DoubleTensor, THDoubleTensor)
 
 #if HAVE_CUDA
-NEIGHBOR_ALLREDUCE_H(torch_cuda_HalfTensor, THCudaHalfTensor)
-NEIGHBOR_ALLREDUCE_H(torch_cuda_FloatTensor, THCudaTensor)
-NEIGHBOR_ALLREDUCE_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
+NEIGHBOR_ALLREDUCE_H(torch_cuda_Tensor, ATenCudaTensor)
+// NEIGHBOR_ALLREDUCE_H(torch_cuda_FloatTensor, THCudaTensor)
+// NEIGHBOR_ALLREDUCE_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
 #endif
 
-#define PAIR_GOSSIP_H(torch_Tensor, THTensor)                             \
+#define PAIR_GOSSIP_H(torch_Tensor, ATenTensor)                             \
   extern "C" int bluefog_torch_pair_gossip_nonblocking_##torch_Tensor(    \
-      THTensor* tensor, THTensor* output, int target_rank,                \
+      at::Tensor* tensor, at::Tensor* output, int target_rank,                \
       double self_weight,  double pair_weight,  bool avg_computation,     \
       char* name);
 
-PAIR_GOSSIP_H(torch_HalfTensor, THHalfTensor)
-PAIR_GOSSIP_H(torch_FloatTensor, THFloatTensor)
-PAIR_GOSSIP_H(torch_DoubleTensor, THDoubleTensor)
+PAIR_GOSSIP_H(torch_Tensor, ATenTensor)
+// PAIR_GOSSIP_H(torch_FloatTensor, THFloatTensor)
+// PAIR_GOSSIP_H(torch_DoubleTensor, THDoubleTensor)
 
 #if HAVE_CUDA
-PAIR_GOSSIP_H(torch_cuda_HalfTensor, THCudaHalfTensor)
-PAIR_GOSSIP_H(torch_cuda_FloatTensor, THCudaTensor)
-PAIR_GOSSIP_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
+PAIR_GOSSIP_H(torch_cuda_Tensor, ATenCudaTensor)
+// PAIR_GOSSIP_H(torch_cuda_FloatTensor, THCudaTensor)
+// PAIR_GOSSIP_H(torch_cuda_DoubleTensor, THCudaDoubleTensor)
 #endif
 
 extern "C" int bluefog_torch_poll(int handle);

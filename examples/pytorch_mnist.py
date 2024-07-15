@@ -53,7 +53,7 @@ parser.add_argument('--dist-optimizer', type=str, default='neighbor_allreduce',
                     help='The type of distributed optimizer. Supporting options are ' +
                     '[neighbor_allreduce, hierarchical_neighbor_allreduce, allreduce, horovod]')
 parser.add_argument('--disable-dynamic-topology', action='store_true',
-                    default=False, help=('Disable each iteration to transmit one neighbor ' +
+                    default=True, help=('Disable each iteration to transmit one neighbor ' +
                                          'per iteration dynamically.'))
 parser.add_argument('--atc-style', action='store_true', default=False,
                     help='If True, the step of optimizer happened before communication')
@@ -89,10 +89,10 @@ if args.cuda:
 kwargs = {"num_workers": 1, "pin_memory": True} if args.cuda else {}
 data_folder_loc = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..")
-train_dataset = datasets.MNIST(
+train_dataset = datasets.CIFAR10(
     os.path.join(data_folder_loc, "data", "data-%d" % bf.rank()),
     train=True,
-    download=True,
+    download=False,
     transform=transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
     ),
@@ -105,7 +105,7 @@ train_loader = torch.utils.data.DataLoader(
     train_dataset, batch_size=args.batch_size, sampler=train_sampler, **kwargs
 )
 
-test_dataset = datasets.MNIST(
+test_dataset = datasets.CIFAR10(
     os.path.join(data_folder_loc, "data", "data-%d" % bf.rank()),
     train=False,
     transform=transforms.Compose(
@@ -140,21 +140,25 @@ class Net(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x, dim=0)
 
-
+from torchvision.models import resnet50, ResNet50_Weights
 model = Net()
 
 if args.cuda:
     print("using cuda.")
     # Move model to GPU.
     model.cuda()
-
+# import json
 # Bluefog: scale learning rate by the number of GPUs.
-optimizer = optim.Adam(model.parameters(), lr=args.lr * bf.size())
-
+optimizer = optim.SGD(model.parameters(), lr=args.lr * bf.size(),momentum=0.9, weight_decay=0.0001)
 # Bluefog: broadcast parameters & optimizer state.
+# print(model.state_dict()["conv2.weight"])
+# with open('/home/bluefog/bluefog_new/model_para/{}.json'.format(bf.local_rank()), 'w') as f:
+#     print
 bf.broadcast_parameters(model.state_dict(), root_rank=0)
+print("broadcast params ending")
 bf.broadcast_optimizer_state(optimizer, root_rank=0)
 
+# exit()
 # Bluefog: wrap optimizer with DistributedOptimizer.
 if args.dist_optimizer != 'horovod':
     base_dist_optimizer = (
@@ -245,6 +249,7 @@ def train(epoch):
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
+        
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
@@ -260,9 +265,10 @@ def train(epoch):
                     loss.item(),
                 )
             )
-
         if args.dist_optimizer == 'neighbor_allreduce' and (batch_idx % 100 == 99):
             optimizer.communication_type = bf.CommunicationType.neighbor_allreduce
+        print("batch_idx:{}ending training one epoch".format(batch_idx))
+    
 
 
 def metric_average(val, name):
@@ -307,6 +313,7 @@ def test(record):
 test_record = []
 for epoch in range(1, args.epochs + 1):
     train(epoch)
+    print("Epoch:{},after train one epoch".format(epoch))
     test(test_record)
 print(f"[{bf.rank()}]: ", test_record)
 bf.barrier()

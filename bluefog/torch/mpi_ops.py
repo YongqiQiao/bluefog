@@ -16,10 +16,9 @@
 
 from contextlib import contextmanager
 from typing import List, Dict, Union, Optional
-
+import bluefog.torch as bf
 import numpy as np
 import torch
-
 from bluefog.torch import mpi_lib  # C library
 from bluefog.torch.utility import deprecated_function_arg
 from bluefog.common.basics import BlueFogBasics, logger
@@ -300,7 +299,7 @@ def broadcast_(tensor, root_rank, name=None) -> torch.Tensor:
     return synchronize(handle)
 
 
-def broadcast_nonblocking_(tensor, root_rank, name=None) -> int:
+def broadcast_nonblocking_(tensor: torch.Tensor, root_rank, name=None) -> int:
     """
     A function that nonblockingly broadcasts the input tensor on root rank to the same
     input tensor on all other Bluefog processes. The operation is performed in-place.

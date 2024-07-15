@@ -456,7 +456,6 @@ void BackgroundThreadLoop(BluefogGlobalState& state) {
 
   // Initialize controller
   state.controller->Initialize();
-
   // We use Lazy initialized pattern. nccl_controller will be initialized only
   // when it is necessary.
 
@@ -498,7 +497,6 @@ void BackgroundThreadLoop(BluefogGlobalState& state) {
   // Iterate until shutdown.
   while (RunLoopOnce(state))
     ;
-
   BFLOG(DEBUG, bluefog_global.controller->GetRank())
       << "Shutting down background thread";
 
@@ -511,6 +509,7 @@ void BackgroundThreadLoop(BluefogGlobalState& state) {
   for (auto& cb : callbacks) {
     cb(SHUT_DOWN_ERROR);
   }
+  
 #if HAVE_NCCL
   // NCCL context has to be finalized before MPI since it relied on
   // several functions of MPI.
@@ -523,7 +522,6 @@ void BackgroundThreadLoop(BluefogGlobalState& state) {
 
 Vendor DetermineController(const MPIOpsType& op_type, int device) {
   if (device == CPU_DEVICE_ID) return Vendor::MPI;
-
   bool nccl_impl_available = true;
   bool force_mpi = false;
   bool built_with_nccl = false;
@@ -567,6 +565,7 @@ Vendor DetermineController(const MPIOpsType& op_type, int device) {
 void PerformOperation(std::vector<TensorTableEntry>& entries) {
   auto& timeline = bluefog_global.timeline;
   for (auto& entry : entries) {
+    
     Vendor controller_vendor =
         DetermineController(entry.mpi_ops_type, entry.device);
 #if HAVE_NCCL
@@ -575,7 +574,7 @@ void PerformOperation(std::vector<TensorTableEntry>& entries) {
       BFLOG(INFO, bluefog_global.controller->GetRank()) << "NCCL Initialized";
     }
 #endif
-
+    
     // Wait for the data is ready (in GPU case).
     if (entry.ready_event != nullptr) {
       while (!entry.ready_event->Ready()) {
@@ -775,13 +774,11 @@ void PerformOperationWithFusion(std::vector<TensorTableEntry>& entries) {
     BFLOG(INFO, bluefog_global.controller->GetRank()) << "NCCL Initialized";
   }
 #endif
-
   Status status = bluefog_global.fusion_buffer.InitializeBuffer(
       bluefog_global.tensor_fusion_threshold, first_entry.device,
       first_entry.context,
       [&]() { timeline.ActivityStartAll(entries, "INIT_FUSION_BUFFER"); },
       [&]() { timeline.ActivityEndAll(entries); });
-  
   // As the dst_weight requires extra memory to scale the tensor for each destination, therefore,
   // extra memory is required.
   Status status_dst_weight = Status::OK();
@@ -792,7 +789,6 @@ void PerformOperationWithFusion(std::vector<TensorTableEntry>& entries) {
       [&]() { timeline.ActivityStartAll(entries, "INIT_WEIGHT_FUSION_BUFFER"); },
       [&]() { timeline.ActivityEndAll(entries); });
   }
-
   if (!status.ok() || !status_dst_weight.ok()) {
     for (auto& e : entries) {
       e.callback(status);
@@ -870,7 +866,6 @@ void NegotiateOfRequestOfMaster(BluefogGlobalState& state,
     }
     message_queue_buffer.pop_front();
   }
-
   // Rank zero has put all its own tensors in the tensor count table.
   // Now, it should count all the tensors that are coming from other
   // ranks at this tick.
@@ -879,7 +874,6 @@ void NegotiateOfRequestOfMaster(BluefogGlobalState& state,
   recvcounts[0] = 0;
   MPI_Gather(MPI_IN_PLACE, 1, MPI_INT, recvcounts, 1, MPI_INT, COORDINATE_RANK,
              mpi_context.mpi_comm);
-
   // 2. Compute displacements.
   auto displcmnts = new int[bluefog_size()];
   size_t total_size = 0;
@@ -891,12 +885,10 @@ void NegotiateOfRequestOfMaster(BluefogGlobalState& state,
     }
     total_size += recvcounts[i];
   }
-
   // 3. Collect messages from every rank.
   auto buffer = new uint8_t[total_size];
   MPI_Gatherv(nullptr, 0, MPI_BYTE, buffer, recvcounts, displcmnts, MPI_BYTE,
               COORDINATE_RANK, mpi_context.mpi_comm);
-
   // 4. Process messages.
   for (int i = 1; i < bluefog_size(); i++) {
     auto rank_buffer_ptr = buffer + displcmnts[i];
@@ -922,7 +914,6 @@ void NegotiateOfRequestOfMaster(BluefogGlobalState& state,
   delete[] recvcounts;
   delete[] displcmnts;
   delete[] buffer;
-
   // At this point, rank zero should have a fully updated tensor count
   // table and should know all the tensors that need to be reduced or
   // gathered, and everyone else should have sent all their information
@@ -1039,7 +1030,6 @@ void NegotiateOfRequestOfMaster(BluefogGlobalState& state,
     }
     state.unfinished_enqueued_entries.fetch_sub(nego_entries.size());
   }
-
   // Check for stalled tensors.
   if (std::chrono::steady_clock::now() - state.last_stall_check >
       STALL_WARNING_TIME) {
@@ -1107,10 +1097,10 @@ void NegotiationOfRequest(BluefogGlobalState& state,
   // Just keep it for a while. will remove.
   if (bluefog_rank() == COORDINATE_RANK) {
     NegotiateOfRequestOfMaster(state, message_queue_buffer, should_change_topo,
-                               should_shut_down);
+                               should_shut_down);                   
   } else {
     NegotiateOfRequestOfSlave(state, message_queue_buffer, should_change_topo,
-                              should_shut_down);
+                              should_shut_down);                     
   }
 }
 
@@ -1468,7 +1458,6 @@ Status EnqueueTensorBroadcast(std::shared_ptr<Tensor> tensor,
   e.device = device;
   e.callback = callback;
   e.mpi_ops_type = MPIOpsType::BROADCAST;
-
   if (bluefog_global.shut_down) {
     return SHUT_DOWN_ERROR;
   }

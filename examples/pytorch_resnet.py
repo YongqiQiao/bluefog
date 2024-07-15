@@ -235,6 +235,7 @@ else:
 
 # Bluefog: broadcast parameters & optimizer state.
 bf.broadcast_parameters(model.state_dict(), root_rank=0)
+print("broadcast params ending")
 bf.broadcast_optimizer_state(optimizer, root_rank=0)
 
 
